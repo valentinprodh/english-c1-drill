@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Road to C1 — Anglais B2 → C1</title>
+  <meta name="description" content="Passe de B2 à C1 en anglais : pièges des francophones, collocations, syntaxe C1 et oral, avec répétition espacée." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } } };
+  </script>
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    @keyframes pop { 0% { transform: scale(.85); opacity: 0 } 60% { transform: scale(1.04); opacity: 1 } 100% { transform: scale(1) } }
+    @keyframes shake { 0%,100% { transform: translateX(0) } 20%,60% { transform: translateX(-6px) } 40%,80% { transform: translateX(6px) } }
+    @keyframes fadeUp { from { transform: translateY(8px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+    @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,.5) } 100% { box-shadow: 0 0 0 14px rgba(239,68,68,0) } }
+    .anim-pop { animation: pop .35s ease-out both; }
+    .anim-shake { animation: shake .4s ease-in-out; }
+    .anim-fade { animation: fadeUp .3s ease-out both; }
+    .anim-rec { animation: pulseRing 1.2s infinite; }
+    .btn-3d { box-shadow: 0 4px 0 0 rgba(0,0,0,.18); transition: transform .08s, box-shadow .08s; }
+    .btn-3d:active { transform: translateY(3px); box-shadow: 0 1px 0 0 rgba(0,0,0,.18); }
+    textarea, input, select { outline: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+  <div id="root">
+    <div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#64748b;font-family:system-ui">Chargement…</div>
+  </div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useRef } = React;
+
+/* =========================================================
+   CONSTANTES
+   ========================================================= */
+const STORAGE_CARDS = 'roadtoc1.cards.v1';
+const STORAGE_STATS = 'roadtoc1.stats.v1';
+const INTERVALS = { 1: 1, 2: 3, 3: 7, 4: 16, 5: 30 }; // jours selon le niveau atteint
+
+const MODULES = {
+  pieges: { label: 'Pièges du français', short: 'Pièges', level: 'A2 → B2', icon: ['TriangleAlert', 'AlertTriangle'], type: 'input',
+    desc: 'Les automatismes qui trahissent un francophone : since/for, through/though, prépositions, modaux passés.' },
+  collocations: { label: 'Collocations & syntaxe', short: 'Collocations', level: 'B2 → C1', icon: ['Layers'], type: 'input',
+    desc: "Les associations de mots qu'un natif utilise spontanément. Écoute et répète à voix haute." },
+  c1: { label: 'Drill syntaxe & oral C1', short: 'Oral C1', level: 'C1', icon: ['Mic'], type: 'oral',
+    desc: 'Inversions, phrases clivées, conditionnels mixtes : formule à l’oral puis compare.' },
+};
+
+const THEME = {
+  pieges: { badge: 'bg-rose-100 text-rose-700', soft: 'bg-rose-50', icon: 'text-rose-500', bar: 'bg-rose-500', grad: 'from-rose-500 to-orange-400' },
+  collocations: { badge: 'bg-indigo-100 text-indigo-700', soft: 'bg-indigo-50', icon: 'text-indigo-500', bar: 'bg-indigo-500', grad: 'from-indigo-500 to-violet-500' },
+  c1: { badge: 'bg-amber-100 text-amber-800', soft: 'bg-amber-50', icon: 'text-amber-500', bar: 'bg-amber-500', grad: 'from-amber-500 to-yellow-400' },
+};
+
+const LEVEL_COLORS = ['bg-slate-200', 'bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-lime-500', 'bg-emerald-500'];
+const PRAISE = ['Excellent !', 'Parfait !', 'Bien joué !', 'Impeccable !', 'Spot on!', 'Nailed it!', 'Bravo !'];
+
+/* =========================================================
+   CARTES DE DÉPART
+   ========================================================= */
+const SEED = [
+  // ---------- PIÈGES DU FRANÇAIS ----------
+  { id: 'seed-p01', module: 'pieges', category: 'Through / though / thought…', prompt: 'We drove ___ the tunnel in less than a minute.', answer: 'through', hint: 'à travers, de part en part',
+    explanation: 'THROUGH = à travers (d’un bout à l’autre). THOUGH = bien que / pourtant. THOUGHT = pensée, ou passé de think. THOROUGH = minutieux. THROUGHOUT = tout au long de, partout dans.',
+    tip: 'Through → on passe À TRAVERS. Throughout = through + out : de bout en bout.' },
+  { id: 'seed-p02', module: 'pieges', category: 'Through / though / thought…', prompt: 'Her analysis was very ___: she checked every single figure.', answer: 'thorough', hint: 'minutieux, approfondi',
+    explanation: 'THOROUGH (/ˈθʌrə/) = minutieux, approfondi. Adverbe : thoroughly (à fond). Ne pas confondre avec through (à travers).',
+    tip: 'thOROUGH a une syllabe de plus que through : il est plus « complet ».' },
+  { id: 'seed-p03', module: 'pieges', category: 'Through / though / thought…', prompt: '___ the conference, he kept checking his phone.', answer: 'Throughout', hint: 'tout au long de',
+    explanation: 'THROUGHOUT = pendant toute la durée de (throughout the year) ou partout dans (throughout the country).',
+    tip: 'through + out = du début jusqu’à la sortie.' },
+  { id: 'seed-p04', module: 'pieges', category: 'Through / though / thought…', prompt: 'It was freezing. We went for a swim, ___.', answer: 'though', hint: 'quand même (en fin de phrase)',
+    explanation: '« though » en fin de phrase = pourtant / quand même, très fréquent à l’oral. En début : Though it was cold, … = Bien qu’il fît froid, …',
+    tip: 'Though = « tho » : le petit mot de la concession.' },
+  { id: 'seed-p05', module: 'pieges', category: 'Since / For', prompt: 'I’ve lived in Prague ___ two years.', answer: 'for', hint: 'depuis + DURÉE',
+    explanation: 'FOR + durée (for two years, for ages). SINCE + point de départ (since 2020, since Monday). « Since two years » est un calque de « depuis » : toujours faux.',
+    tip: 'SINCE = Starting point. FOR = Full duration.' },
+  { id: 'seed-p06', module: 'pieges', category: 'Since / For', prompt: 'Traduis : « J’apprends l’anglais depuis 2020. » (je continue aujourd’hui)', answer: 'I have been learning English since 2020.',
+    alternatives: ['I have learnt English since 2020.', 'I have learned English since 2020.'], hint: 'depuis + action qui dure encore → present perfect',
+    explanation: 'Action commencée dans le passé et toujours en cours → present perfect (continuous). Jamais le présent simple : ✗ I learn English since 2020.',
+    tip: '« Depuis » en français = present perfect en anglais. Le présent est interdit.' },
+  { id: 'seed-p07', module: 'pieges', category: 'Present perfect vs prétérit', prompt: 'I ___ (see) that film last week.', answer: 'saw', hint: 'moment passé précis',
+    explanation: 'Repère temporel terminé (last week, yesterday, in 2019, ago) → prétérit. Le present perfect est impossible avec un moment passé précis : ✗ I have seen it last week.',
+    tip: 'Si tu peux répondre à « Quand ? » par une date → prétérit.' },
+  { id: 'seed-p08', module: 'pieges', category: 'Present perfect vs prétérit', prompt: 'I ___ (never / be) to Japan, but I’d love to go.', answer: 'have never been', hint: 'expérience de vie, sans date',
+    explanation: 'Expérience de vie sans moment précis → present perfect. « been to » = être allé (et revenu) ; « gone to » = parti là-bas (et pas encore revenu).',
+    tip: 'Ever / never / already / yet / so far → present perfect.' },
+  { id: 'seed-p09', module: 'pieges', category: 'Prépositions obligatoires', prompt: 'Our plans depend ___ the weather.', answer: 'on', hint: '≠ « dépendre de »',
+    explanation: 'depend ON (et non « of »). Même famille : rely on, count on, insist on, focus on.',
+    tip: 'On compte SUR quelque chose : depend on, rely on, count on.' },
+  { id: 'seed-p10', module: 'pieges', category: 'Prépositions obligatoires', prompt: 'Traduis : « Tu peux m’expliquer comment ça marche ? »', answer: 'Can you explain to me how it works?',
+    alternatives: ['Could you explain to me how it works?', 'Can you explain how it works to me?', 'Could you explain how it works to me?', 'Can you explain how it works?', 'Could you explain how it works?'], hint: 'explain … TO someone',
+    explanation: 'On explique quelque chose À quelqu’un : explain (something) TO someone. ✗ « Explain me » est une des erreurs les plus fréquentes. Idem : describe to me, suggest to me, say to me.',
+    tip: 'Explain, describe, suggest, say → toujours TO devant la personne.' },
+  { id: 'seed-p11', module: 'pieges', category: 'Prépositions obligatoires', prompt: 'Shh! I’m listening ___ the news.', answer: 'to', hint: 'écouter quelque chose',
+    explanation: 'listen TO something/someone. Hear = entendre (sans préposition). ✗ I’m listening the radio.',
+    tip: 'Listen TO, look AT, wait FOR : ces verbes ne marchent jamais seuls.' },
+  { id: 'seed-p12', module: 'pieges', category: 'Modaux passés', prompt: 'Traduis : « Tu aurais dû me le dire ! »', answer: 'You should have told me!', hint: 'reproche au passé',
+    explanation: 'Reproche ou regret au passé : should have + participe passé. Négatif : shouldn’t have + PP (tu n’aurais pas dû).',
+    tip: '« aurais dû » = should HAVE + V3. Jamais « should told ».' },
+  { id: 'seed-p13', module: 'pieges', category: 'Modaux passés', prompt: 'We ___ (could / win) the match if we had trained harder.', answer: 'could have won', hint: 'possibilité non réalisée',
+    explanation: 'Possibilité non réalisée dans le passé : could have + PP. Probabilité : might/may have + PP. Déduction certaine : must have + PP.',
+    tip: 'Could have = « aurait pu » : la porte était ouverte, on ne l’a pas franchie.' },
+  { id: 'seed-p14', module: 'pieges', category: 'Modaux passés', prompt: 'She must ___ (forget) about the meeting – she never misses one.', answer: 'have forgotten', hint: 'déduction sur le passé',
+    explanation: 'Déduction logique sur le passé : must have + PP (= elle a dû oublier). Contraire : can’t have + PP (= elle n’a pas pu oublier).',
+    tip: 'Must have = « a dû » (quasi certain). Can’t have = « n’a pas pu ».' },
+  { id: 'seed-p15', module: 'pieges', category: 'Faux amis grammaticaux', prompt: 'Traduis : « Je suis d’accord avec toi. »', answer: 'I agree with you.', hint: 'agree est un verbe',
+    explanation: '« agree » est un VERBE, pas un adjectif : ✗ I am agree. Négatif : I don’t agree / I disagree.',
+    tip: 'Pas de « am » devant agree : I agree, she agrees.' },
+
+  // ---------- COLLOCATIONS ----------
+  { id: 'seed-c01', module: 'collocations', category: 'Make / Do / Take', prompt: 'prendre une décision ferme', answer: 'make a firm decision', alternatives: ['take a firm decision'],
+    explanation: 'On MAKE une décision (« take a decision » existe en anglais britannique mais « make » domine largement). Firm = ferme, définitif.',
+    example: 'After weeks of hesitation, she finally made a firm decision.' },
+  { id: 'seed-c02', module: 'collocations', category: 'Make / Do / Take', prompt: 'faire un effort', answer: 'make an effort',
+    explanation: 'MAKE = produire, créer (make an effort, a mistake, a suggestion). DO = activité, tâche (do homework, do research, do business).',
+    example: 'You need to make more of an effort with your pronunciation.' },
+  { id: 'seed-c03', module: 'collocations', category: 'Make / Do / Take', prompt: 'faire des progrès', answer: 'make progress', alternatives: ['make a lot of progress', 'make some progress'],
+    explanation: '« progress » est indénombrable : ✗ progresses, ✗ a progress. On dit make progress, make good progress.',
+    example: 'I have made real progress since I started speaking every day.' },
+  { id: 'seed-c04', module: 'collocations', category: 'Expressions idiomatiques', prompt: 'tirer des conclusions hâtives', answer: 'jump to conclusions', alternatives: ['leap to conclusions'],
+    explanation: 'Image du saut : on « saute » à la conclusion sans passer par les étapes.',
+    example: 'Let’s not jump to conclusions before we see the data.' },
+  { id: 'seed-c05', module: 'collocations', category: 'Expressions idiomatiques', prompt: 'se montrer à la hauteur d’un défi', answer: 'rise to the challenge', alternatives: ['meet the challenge', 'rise to the occasion'],
+    explanation: 'Rise to the challenge = se montrer à la hauteur. Take up / take on a challenge = accepter de relever un défi.',
+    example: 'The new team rose to the challenge brilliantly.' },
+  { id: 'seed-c06', module: 'collocations', category: 'Adjectif + nom', prompt: 'jouer un rôle clé', answer: 'play a key role', alternatives: ['play a pivotal role', 'play a crucial role', 'play a vital role'],
+    explanation: 'Play a role / a part. Les adjectifs C1 typiques : key, pivotal, crucial, vital, major.',
+    example: 'Trust plays a key role in any negotiation.' },
+  { id: 'seed-c07', module: 'collocations', category: 'Verbe + structure', prompt: 'tenir compte de quelque chose', answer: 'take something into account',
+    alternatives: ['take into account', 'take something into consideration', 'take into consideration', 'allow for something'],
+    explanation: 'Structure : take X into account (ou take into account X si X est long). Plus soutenu : take X into consideration.',
+    example: 'We have to take the exchange rate into account.' },
+  { id: 'seed-c08', module: 'collocations', category: 'Verbe + nom', prompt: 'atteindre un objectif', answer: 'achieve a goal',
+    alternatives: ['reach a goal', 'meet a goal', 'achieve an objective', 'reach a target', 'meet a target', 'hit a target', 'achieve one’s goal'],
+    explanation: 'Achieve / reach a goal ; meet / hit a target. ✗ « attain an objective » existe mais sonne très formel.',
+    example: 'We achieved our sales goal two months early.' },
+  { id: 'seed-c09', module: 'collocations', category: 'Adjectif + nom', prompt: 'une pluie battante', answer: 'heavy rain', alternatives: ['torrential rain', 'pouring rain', 'driving rain'],
+    explanation: 'HEAVY rain / heavy traffic / a heavy smoker. ✗ strong rain : « strong » va avec wind, coffee, accent.',
+    example: 'Heavy rain disrupted trains across the country.' },
+  { id: 'seed-c10', module: 'collocations', category: 'Verbe + nom', prompt: 'soulever une question (en réunion)', answer: 'raise an issue',
+    alternatives: ['raise a question', 'raise a concern', 'raise a point', 'bring up an issue', 'bring up a question'],
+    explanation: 'RAISE (avec objet) = soulever, lever. RISE (sans objet) = monter. ✗ rise a question.',
+    example: 'She raised an important issue during the meeting.' },
+  { id: 'seed-c11', module: 'collocations', category: 'Verbe + structure', prompt: 'être à la hauteur des attentes', answer: 'live up to expectations',
+    alternatives: ['live up to the expectations', 'meet expectations', 'meet the expectations', 'live up to their expectations', 'live up to my expectations'],
+    explanation: 'Live up to = être à la hauteur de (expectations, a reputation, a promise).',
+    example: 'The sequel didn’t live up to expectations.' },
+  { id: 'seed-c12', module: 'collocations', category: 'Verbe + nom', prompt: 'accorder une grande importance à', answer: 'attach great importance to',
+    alternatives: ['attach importance to', 'place great importance on', 'place importance on', 'put great emphasis on'],
+    explanation: 'Attach importance TO / place importance ON. Registre soutenu, très apprécié à l’écrit C1.',
+    example: 'Our company attaches great importance to customer feedback.' },
+
+  // ---------- DRILL C1 ----------
+  { id: 'seed-o01', module: 'c1', category: 'Inversion négative', prompt: 'Reformule en commençant par « Never » : « I had never seen such chaos. »', answer: 'Never had I seen such chaos.',
+    explanation: 'Adverbe négatif en tête (Never, Rarely, Seldom, Little) → inversion auxiliaire + sujet, comme dans une question. Registre soutenu ou emphatique.',
+    tip: 'Négatif en tête = la phrase « se retourne » comme une question.' },
+  { id: 'seed-o02', module: 'c1', category: 'Inversion négative', prompt: 'Reformule avec « No sooner… » : « As soon as I had arrived, the phone rang. »', answer: 'No sooner had I arrived than the phone rang.',
+    alternatives: ['Hardly had I arrived when the phone rang.', 'Scarcely had I arrived when the phone rang.'],
+    explanation: 'No sooner … THAN (jamais « when »). Hardly / Scarcely … WHEN. Toujours avec un past perfect inversé.',
+    tip: 'No sooner est un comparatif → THAN.' },
+  { id: 'seed-o03', module: 'c1', category: 'Phrase pseudo-clivée', prompt: 'Mets « his attitude » en valeur avec une phrase en « What… » : « His attitude annoys me. »', answer: 'What annoys me is his attitude.',
+    alternatives: ['It is his attitude that annoys me.', 'It’s his attitude that annoys me.'],
+    explanation: 'Pseudo-clivée : What + proposition + is + élément mis en valeur. = « Ce qui m’agace, c’est… ». Idéal à l’oral pour structurer une opinion.',
+    tip: '« Ce qui… c’est » → « What… is ».' },
+  { id: 'seed-o04', module: 'c1', category: 'Phrase clivée', prompt: 'Dis en anglais avec une clivée : « C’est Sarah qui a eu l’idée, pas Tom. »', answer: 'It was Sarah who had the idea, not Tom.',
+    alternatives: ['It was Sarah that had the idea, not Tom.', 'It was Sarah who came up with the idea, not Tom.'],
+    explanation: 'It + be + élément + who/that… Le temps de « be » suit le contexte (passé → It was).',
+    tip: 'C’est… qui → It was… who (au passé, pas « It is »).' },
+  { id: 'seed-o05', module: 'c1', category: 'Conditionnel mixte', prompt: 'Une seule phrase au conditionnel mixte : « I didn’t accept the job in London. I’m not living there now. »',
+    answer: 'If I had accepted the job in London, I would be living there now.',
+    alternatives: ['If I had accepted the job, I would be living in London now.', 'Had I accepted the job in London, I would be living there now.'],
+    explanation: 'Condition passée irréelle (If + past perfect) → conséquence présente (would + base verbale / would be + -ing).',
+    tip: 'Passé → présent : had + PP … would + V.' },
+  { id: 'seed-o06', module: 'c1', category: 'Conditionnel mixte', prompt: 'Conditionnel mixte : « I’m not very organised, so I missed the deadline. »',
+    answer: 'If I were more organised, I wouldn’t have missed the deadline.',
+    alternatives: ['If I were more organized, I wouldn’t have missed the deadline.', 'If I was more organised, I wouldn’t have missed the deadline.', 'If I was more organized, I wouldn’t have missed the deadline.', 'If I were better organised, I wouldn’t have missed the deadline.', 'If I were better organized, I wouldn’t have missed the deadline.'],
+    explanation: 'Trait permanent au présent (If + prétérit, « were » plus soutenu) → conséquence passée (would have + PP).',
+    tip: 'Présent → passé : were … would have + PP.' },
+  { id: 'seed-o07', module: 'c1', category: 'Inversion conditionnelle', prompt: 'Supprime « If » grâce à une inversion : « If I had known, I would have called you. »', answer: 'Had I known, I would have called you.',
+    explanation: 'Had + sujet + PP = If + sujet + had + PP. De même : Were I… (= If I were), Should you… (= If you should). Fréquent à l’écrit formel.',
+    tip: 'On supprime « if », on avance l’auxiliaire.' },
+  { id: 'seed-o08', module: 'c1', category: 'Inversion conditionnelle', prompt: 'Version formelle avec « Should » : « If you need any further information, please contact me. »',
+    answer: 'Should you need any further information, please contact me.',
+    alternatives: ['Should you need any further information, please do not hesitate to contact me.', 'Should you need any further information, do not hesitate to contact me.'],
+    explanation: 'Should + sujet + base verbale = If + sujet + présent. Formule incontournable des e-mails professionnels.',
+    tip: 'Should you… = « Si jamais vous… ».' },
+  { id: 'seed-o09', module: 'c1', category: 'Inversion « Not only »', prompt: 'Commence par « Not only » : « She speaks French fluently and she also speaks Czech. »',
+    answer: 'Not only does she speak French fluently, but she also speaks Czech.',
+    alternatives: ['Not only does she speak French fluently but she also speaks Czech.', 'Not only does she speak fluent French, but she also speaks Czech.', 'Not only does she speak French fluently, she also speaks Czech.'],
+    explanation: 'Not only en tête → inversion avec do/does/did (comme une question), puis « but … also ».',
+    tip: 'Not only DOES she… but she ALSO…' },
+  { id: 'seed-o10', module: 'c1', category: 'Inversion « Only when »', prompt: 'Commence par « Only when » : « I understood the problem only when I read the report. »',
+    answer: 'Only when I read the report did I understand the problem.',
+    explanation: 'Only when / Only after / Only then : l’inversion se fait dans la proposition PRINCIPALE, pas juste après « when ».',
+    tip: 'Only when [phrase normale], [phrase inversée].' },
+  { id: 'seed-o11', module: 'c1', category: 'Inversion « Little »', prompt: 'Commence par « Little » : « He had no idea what was about to happen. »',
+    answer: 'Little did he know what was about to happen.',
+    alternatives: ['Little did he realise what was about to happen.', 'Little did he realize what was about to happen.'],
+    explanation: 'Little did + sujet + know/realise = il était loin de se douter. Très narratif, parfait pour raconter une anecdote.',
+    tip: 'Little did he know… = « Il ne se doutait pas que… ».' },
+];
+
+/* =========================================================
+   UTILITAIRES
+   ========================================================= */
+const pad = (n) => String(n).padStart(2, '0');
+const toISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const todayISO = () => toISO(new Date());
+const parseISO = (iso) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (iso, n) => { const d = parseISO(iso); d.setDate(d.getDate() + n); return toISO(d); };
+const diffDays = (a, b) => Math.round((parseISO(b) - parseISO(a)) / 86400000);
+const fmtDate = (iso) => parseISO(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+const uid = () => 'c-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+const shuffle = (arr) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+
+function relativeDue(iso) {
+  const d = diffDays(todayISO(), iso);
+  if (d < 0) return `en retard (${-d} j)`;
+  if (d === 0) return "aujourd'hui";
+  if (d === 1) return 'demain';
+  return `dans ${d} j`;
+}
+
+function normalize(s) {
+  let t = String(s || '').toLowerCase()
+    .replace(/[’‘`´]/g, "'")
+    .replace(/[“”«»"]/g, ' ');
+  t = t.replace(/\bcan't\b/g, 'cannot').replace(/\bcan not\b/g, 'cannot')
+    .replace(/\bwon't\b/g, 'will not').replace(/\bshan't\b/g, 'shall not')
+    .replace(/n't\b/g, ' not').replace(/'ve\b/g, ' have').replace(/'re\b/g, ' are')
+    .replace(/'ll\b/g, ' will').replace(/'d\b/g, ' would').replace(/\bi'm\b/g, 'i am')
+    .replace(/\b(it|that|what|there|he|she|here|who|where|how)'s\b/g, '$1 is')
+    .replace(/\borganized\b/g, 'organised').replace(/\brealize\b/g, 'realise');
+  t = t.replace(/[.,!?;:()[\]…–—]/g, ' ').replace(/\s+/g, ' ').trim();
+  return t;
+}
+
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+const GAP_RE = /_{2,}/;
+const hasGap = (p) => GAP_RE.test(p || '');
+const fillGap = (prompt, ans) => prompt.replace(GAP_RE, ans).replace(/\s*\([^)]*\)/g, '');
+const acceptedAnswers = (card) => [card.answer, ...(card.alternatives || [])].filter(Boolean);
+
+function evaluate(input, card) {
+  const u = normalize(input);
+  const targets = acceptedAnswers(card).map(normalize).filter(Boolean);
+  if (targets.includes(u)) return { correct: true, near: false };
+  if (hasGap(card.prompt)) {
+    const fulls = acceptedAnswers(card).map((a) => normalize(fillGap(card.prompt, a)));
+    if (fulls.includes(u)) return { correct: true, near: false };
+  }
+  const best = Math.min(...targets.map((t) => levenshtein(u, t)));
+  const len = Math.max(...targets.map((t) => t.length), 1);
+  return { correct: false, near: len >= 6 && best <= Math.max(1, Math.round(len * 0.12)) };
+}
+
+function similarity(input, card) {
+  const u = normalize(input);
+  if (!u) return 0;
+  const scores = acceptedAnswers(card).map(normalize).map((t) => 1 - levenshtein(u, t) / Math.max(u.length, t.length, 1));
+  return Math.round(Math.max(...scores) * 100);
+}
+
+function audioTextFor(card) {
+  if (hasGap(card.prompt)) return fillGap(card.prompt, card.answer);
+  return card.answer;
+}
+
+const MODULE_ALIASES = { pieges: 'pieges', 'pièges': 'pieges', piege: 'pieges', traps: 'pieges', trap: 'pieges',
+  collocations: 'collocations', collocation: 'collocations', colloc: 'collocations', flashcards: 'collocations', flashcard: 'collocations',
+  c1: 'c1', oral: 'c1', drill: 'c1', syntax: 'c1', syntaxe: 'c1' };
+
+function makeCard(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const module = MODULE_ALIASES[String(raw.module || '').toLowerCase().trim()] || 'pieges';
+  const prompt = String(raw.prompt || raw.question || raw.fr || '').trim();
+  const answer = String(raw.answer || raw.en || '').trim();
+  if (!prompt || !answer) return null;
+  let alternatives = raw.alternatives || raw.alts || [];
+  if (typeof alternatives === 'string') alternatives = alternatives.split('|');
+  alternatives = (Array.isArray(alternatives) ? alternatives : []).map((s) => String(s).trim()).filter(Boolean);
+  const type = raw.type === 'oral' || raw.type === 'input' ? raw.type : MODULES[module].type;
+  return {
+    id: raw.id ? String(raw.id) : uid(),
+    module, type,
+    category: String(raw.category || '').trim(),
+    prompt, answer, alternatives,
+    hint: String(raw.hint || '').trim(),
+    explanation: String(raw.explanation || raw.rule || '').trim(),
+    tip: String(raw.tip || raw.mnemonic || '').trim(),
+    example: String(raw.example || '').trim(),
+    level: clamp(parseInt(raw.level, 10) || 1, 1, 5),
+    nextReviewDate: /^\d{4}-\d{2}-\d{2}$/.test(raw.nextReviewDate || '') ? raw.nextReviewDate : todayISO(),
+    reviews: parseInt(raw.reviews, 10) || 0,
+    lapses: parseInt(raw.lapses, 10) || 0,
+    correctCount: parseInt(raw.correctCount, 10) || 0,
+    lastReviewed: raw.lastReviewed || null,
+    createdAt: raw.createdAt || todayISO(),
+  };
+}
+
+function applySRS(card, correct) {
+  const today = todayISO();
+  if (correct) {
+    const level = Math.min(5, card.level + 1);
+    return { ...card, level, nextReviewDate: addDays(today, INTERVALS[level]), reviews: card.reviews + 1, correctCount: card.correctCount + 1, lastReviewed: today };
+  }
+  return { ...card, level: 1, nextReviewDate: addDays(today, INTERVALS[1]), reviews: card.reviews + 1, lapses: card.lapses + 1, lastReviewed: today };
+}
+
+function srsPreview(card, correct) {
+  if (correct) {
+    const l = Math.min(5, card.level + 1);
+    return card.level === 5 ? `Niveau 5 maintenu · prochaine révision dans ${INTERVALS[5]} jours` : `Niveau ${card.level} → ${l} · prochaine révision dans ${INTERVALS[l]} jours`;
+  }
+  return 'Retour au niveau 1 · à revoir demain, et une fois encore en fin de session';
+}
+
+/* ---------- Stockage ---------- */
+const DEFAULT_STATS = { xp: 0, streak: 0, bestStreak: 0, lastStudyDate: null, history: {},
+  settings: { accent: 'en-GB', rate: 0.95, sessionLimit: 40, dailyGoal: 20, autoplay: true } };
+
+function loadCards() {
+  try {
+    const raw = localStorage.getItem(STORAGE_CARDS);
+    if (raw === null) return SEED.map(makeCard);
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.map(makeCard).filter(Boolean) : SEED.map(makeCard);
+  } catch (e) { return SEED.map(makeCard); }
+}
+function loadStats() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_STATS) || 'null');
+    if (!s) return DEFAULT_STATS;
+    return { ...DEFAULT_STATS, ...s, settings: { ...DEFAULT_STATS.settings, ...(s.settings || {}) }, history: s.history || {} };
+  } catch (e) { return DEFAULT_STATS; }
+}
+
+function recordStats(stats, correct, firstAttempt) {
+  const today = todayISO();
+  const h = { ...(stats.history[today] || { reviewed: 0, correct: 0 }) };
+  h.reviewed += 1; if (correct) h.correct += 1;
+  let { streak, bestStreak, lastStudyDate } = stats;
+  if (lastStudyDate !== today) {
+    streak = lastStudyDate === addDays(today, -1) ? streak + 1 : 1;
+    lastStudyDate = today;
+  }
+  const xpGain = correct ? (firstAttempt ? 10 : 3) : 1;
+  return { ...stats, xp: stats.xp + xpGain, streak, bestStreak: Math.max(bestStreak, streak), lastStudyDate, history: { ...stats.history, [today]: h } };
+}
+
+/* ---------- Voix ---------- */
+function pickVoice(accent) {
+  const voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+  const norm = (l) => (l || '').replace('_', '-').toLowerCase();
+  const cand = voices.filter((v) => norm(v.lang).startsWith(accent.toLowerCase()));
+  return cand.find((v) => /natural|neural|premium|enhanced|google|siri|daniel|serena|samantha|libby|sonia|aria|jenny/i.test(v.name))
+    || cand[0] || voices.find((v) => norm(v.lang).startsWith('en'));
+}
+function speak(text, settings, onEnd) {
+  if (!('speechSynthesis' in window)) return false;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = settings.accent; u.rate = settings.rate;
+  const v = pickVoice(settings.accent); if (v) u.voice = v;
+  u.onend = onEnd; u.onerror = onEnd;
+  speechSynthesis.speak(u);
+  return true;
+}
+
+function useDictation(lang) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const [listening, setListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const recRef = useRef(null);
+  const start = () => {
+    if (!SR) return;
+    try { recRef.current && recRef.current.abort(); } catch (e) {}
+    const rec = new SR();
+    rec.lang = lang; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+    rec.onresult = (e) => { let t = ''; for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript; setTranscript(t); };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec; setTranscript(''); setListening(true);
+    try { rec.start(); } catch (e) { setListening(false); }
+  };
+  const stop = () => { try { recRef.current && recRef.current.stop(); } catch (e) {} };
+  useEffect(() => () => { try { recRef.current && recRef.current.abort(); } catch (e) {} }, []);
+  return { supported: !!SR, listening, transcript, setTranscript, start, stop };
+}
+
+/* =========================================================
+   COMPOSANTS UI DE BASE
+   ========================================================= */
+function Icon({ name, size = 20, className = '', strokeWidth = 2 }) {
+  const ref = useRef(null);
+  const key = Array.isArray(name) ? name.join('|') : name;
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const L = window.lucide;
+    const names = key.split('|');
+    let node = null;
+    if (L) for (const n of names) { node = (L.icons && L.icons[n]) || L[n]; if (node && Array.isArray(node)) break; node = null; }
+    if (!node) { el.innerHTML = ''; return; }
+    let children = node;
+    if (typeof node[0] === 'string') children = node[2] || [];
+    const attrs = (a) => Object.entries(a || {}).map(([k, v]) => `${k}="${String(v).replace(/"/g, '&quot;')}"`).join(' ');
+    const inner = children.map((c) => `<${c[0]} ${attrs(c[1])}></${c[0]}>`).join('');
+    el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  }, [key, size, strokeWidth]);
+  return <span ref={ref} className={'inline-flex items-center justify-center shrink-0 ' + className} style={{ width: size, height: size }} aria-hidden="true" />;
+}
+
+function Button({ children, variant = 'primary', className = '', size = 'md', ...props }) {
+  const variants = {
+    primary: 'bg-emerald-500 hover:bg-emerald-600 text-white btn-3d',
+    dark: 'bg-slate-900 hover:bg-slate-800 text-white btn-3d',
+    danger: 'bg-rose-500 hover:bg-rose-600 text-white btn-3d',
+    indigo: 'bg-indigo-500 hover:bg-indigo-600 text-white btn-3d',
+    ghost: 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200',
+    soft: 'bg-slate-100 hover:bg-slate-200 text-slate-700',
+    link: 'text-slate-500 hover:text-slate-800 underline-offset-2 hover:underline',
+  };
+  const sizes = { sm: 'px-3 py-1.5 text-sm rounded-lg', md: 'px-4 py-2.5 text-sm rounded-xl', lg: 'px-6 py-3.5 text-base rounded-2xl' };
+  return (
+    <button {...props} className={`inline-flex items-center justify-center gap-2 font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}>
+      {children}
+    </button>
+  );
+}
+
+function ModuleBadge({ module }) {
+  const m = MODULES[module];
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${THEME[module].badge}`}>
+      <Icon name={m.icon} size={12} /> {m.short}
+    </span>
+  );
+}
+
+function LevelDots({ card }) {
+  return (
+    <span className="inline-flex items-center gap-1" title={`Niveau ${card.level}/5`}>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <span key={i} className={`h-2 w-2 rounded-full ${i <= card.level && card.reviews > 0 ? LEVEL_COLORS[card.level] : 'bg-slate-200'}`} />
+      ))}
+      {card.reviews === 0 && <span className="ml-1 text-[10px] font-bold uppercase tracking-wide text-sky-600">Nouveau</span>}
+    </span>
+  );
+}
+
+function SpeakButton({ text, settings, label = 'Écouter', compact = false }) {
+  const [playing, setPlaying] = useState(false);
+  if (!('speechSynthesis' in window)) return null;
+  return (
+    <button type="button"
+      onClick={() => { setPlaying(true); speak(text, settings, () => setPlaying(false)); }}
+      className={`inline-flex items-center gap-2 rounded-xl font-semibold transition ${compact ? 'p-2 bg-slate-100 hover:bg-slate-200 text-slate-600' : 'px-3 py-2 text-sm bg-sky-100 hover:bg-sky-200 text-sky-700'} ${playing ? 'ring-2 ring-sky-300' : ''}`}
+      title={`Écouter : ${text}`}>
+      <Icon name={['Volume2']} size={compact ? 16 : 18} className={playing ? 'animate-pulse' : ''} />
+      {!compact && label}
+    </button>
+  );
+}
+
+function Modal({ title, onClose, children, wide = false }) {
+  useEffect(() => {
+    const h = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm p-0 sm:p-4" onMouseDown={onClose}>
+      <div className={`anim-pop w-full ${wide ? 'sm:max-w-2xl' : 'sm:max-w-lg'} max-h-[92vh] overflow-y-auto bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl`} onMouseDown={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white/95 backdrop-blur flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h2 className="text-lg font-bold">{title}</h2>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"><Icon name={['X']} size={18} /></button>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Toast({ toast }) {
+  if (!toast) return null;
+  const color = toast.type === 'error' ? 'bg-rose-600' : toast.type === 'info' ? 'bg-slate-800' : 'bg-emerald-600';
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] anim-fade">
+      <div className={`${color} text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-medium flex items-center gap-2`}>
+        <Icon name={toast.type === 'error' ? ['CircleAlert', 'AlertCircle'] : ['CircleCheck', 'CheckCircle2']} size={18} />
+        {toast.msg}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   EXERCICES
+   ========================================================= */
+function PromptText({ card, revealed }) {
+  if (!hasGap(card.prompt)) return <span>{card.prompt}</span>;
+  const [before, ...rest] = card.prompt.split(GAP_RE);
+  const after = rest.join('___');
+  return (
+    <span>
+      {before}
+      {revealed
+        ? <span className="px-1.5 mx-0.5 rounded-md bg-emerald-100 text-emerald-700 font-bold">{card.answer}</span>
+        : <span className="inline-block align-middle w-16 mx-1 border-b-[3px] border-dashed border-slate-300" />}
+      {after}
+    </span>
+  );
+}
+
+function RuleBox({ card }) {
+  if (!card.explanation && !card.tip && !card.example) return null;
+  return (
+    <div className="space-y-3 mt-4">
+      {card.explanation && (
+        <div className="flex gap-3 p-4 rounded-2xl bg-white border border-slate-200">
+          <Icon name={['Lightbulb']} size={20} className="text-amber-500 mt-0.5" />
+          <div><div className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-1">La règle</div><p className="text-sm leading-relaxed text-slate-700">{card.explanation}</p></div>
+        </div>
+      )}
+      {card.tip && (
+        <div className="flex gap-3 p-4 rounded-2xl bg-violet-50 border border-violet-100">
+          <Icon name={['Brain']} size={20} className="text-violet-500 mt-0.5" />
+          <div><div className="text-xs font-bold uppercase tracking-wide text-violet-400 mb-1">Moyen mnémotechnique</div><p className="text-sm leading-relaxed text-violet-900">{card.tip}</p></div>
+        </div>
+      )}
+      {card.example && (
+        <div className="flex gap-3 p-4 rounded-2xl bg-sky-50 border border-sky-100 items-start">
+          <Icon name={['Quote']} size={20} className="text-sky-500 mt-0.5" />
+          <div className="flex-1"><div className="text-xs font-bold uppercase tracking-wide text-sky-400 mb-1">En contexte</div><p className="text-sm italic text-sky-900">{card.example}</p></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InputExercise({ card, settings, srsActive, onDone }) {
+  const [value, setValue] = useState('');
+  const [status, setStatus] = useState(null);
+  const [near, setNear] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const inputRef = useRef(null);
+  const dict = useDictation(settings.accent);
+
+  useEffect(() => { if (dict.transcript) setValue(dict.transcript); }, [dict.transcript]);
+  useEffect(() => { inputRef.current && inputRef.current.focus(); }, []);
+
+  const audioText = audioTextFor(card);
+  const check = (e) => {
+    e && e.preventDefault();
+    if (status || !value.trim()) return;
+    const r = evaluate(value, card);
+    setStatus(r.correct ? 'correct' : 'wrong');
+    setNear(r.near);
+    if (settings.autoplay) speak(audioText, settings);
+  };
+  const isTranslation = !hasGap(card.prompt);
+  const alts = card.alternatives || [];
+
+  return (
+    <div>
+      <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+        {card.module === 'collocations' ? 'Traduis en anglais' : isTranslation ? 'Traduction' : 'Complète la phrase'}
+      </div>
+      <div className="text-xl sm:text-2xl font-semibold leading-snug text-slate-900 mb-5">
+        <PromptText card={card} revealed={!!status} />
+      </div>
+
+      {card.hint && !status && (
+        showHint
+          ? <div className="mb-4 text-sm text-slate-600 bg-slate-100 rounded-xl px-3 py-2 inline-flex items-center gap-2 anim-fade"><Icon name={['Info']} size={16} />{card.hint}</div>
+          : <button onClick={() => setShowHint(true)} className="mb-4 text-sm font-semibold text-slate-500 hover:text-slate-800 inline-flex items-center gap-1"><Icon name={['Eye']} size={16} /> Voir l’indice</button>
+      )}
+
+      <form onSubmit={check} className="flex gap-2">
+        <input ref={inputRef} value={value} onChange={(e) => setValue(e.target.value)} disabled={!!status}
+          placeholder={isTranslation ? 'Écris ta réponse en anglais…' : 'Mot(s) manquant(s)…'}
+          autoComplete="off" autoCapitalize="off" spellCheck="false"
+          className={`flex-1 min-w-0 px-4 py-3.5 rounded-2xl border-2 text-lg font-medium transition bg-white ${status === 'correct' ? 'border-emerald-400 bg-emerald-50' : status === 'wrong' ? 'border-rose-400 bg-rose-50 anim-shake' : 'border-slate-200 focus:border-indigo-400'}`} />
+        {dict.supported && !status && (
+          <button type="button" onClick={dict.listening ? dict.stop : dict.start} title="Dicter ma réponse"
+            className={`px-4 rounded-2xl border-2 ${dict.listening ? 'bg-rose-500 border-rose-500 text-white anim-rec' : 'bg-white border-slate-200 text-slate-500 hover:text-slate-800'}`}>
+            <Icon name={dict.listening ? ['Square'] : ['Mic']} size={20} />
+          </button>
+        )}
+        {!status && <Button type="submit" size="lg" disabled={!value.trim()}>Valider</Button>}
+      </form>
+
+      {status && (
+        <div className={`mt-5 rounded-3xl p-5 anim-fade ${status === 'correct' ? 'bg-emerald-50 border border-emerald-200' : 'bg-rose-50 border border-rose-200'}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className={`h-9 w-9 rounded-full flex items-center justify-center text-white ${status === 'correct' ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                <Icon name={status === 'correct' ? ['Check'] : ['X']} size={20} strokeWidth={3} />
+              </span>
+              <div className={`text-lg font-extrabold ${status === 'correct' ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {status === 'correct' ? PRAISE[Math.floor(Math.random() * PRAISE.length)] : near ? 'Presque ! Faute de frappe ?' : 'Pas tout à fait…'}
+              </div>
+            </div>
+            <SpeakButton text={audioText} settings={settings} />
+          </div>
+          {status === 'wrong' && (
+            <div className="mt-3 text-sm space-y-1">
+              <div className="text-rose-700"><span className="font-semibold">Ta réponse :</span> <span className="line-through">{value}</span></div>
+              <div className="text-slate-800"><span className="font-semibold">Réponse attendue :</span> <span className="font-bold text-emerald-700">{card.answer}</span></div>
+            </div>
+          )}
+          {isTranslation && status === 'correct' && normalize(value) !== normalize(card.answer) && (
+            <div className="mt-2 text-sm text-slate-700"><span className="font-semibold">Formulation de référence :</span> {card.answer}</div>
+          )}
+          {alts.length > 0 && <div className="mt-2 text-xs text-slate-500"><span className="font-semibold">Aussi accepté :</span> {alts.join(' · ')}</div>}
+          {card.example && <div className="mt-3"><SpeakButton text={card.example} settings={settings} label="Écouter l’exemple" /></div>}
+          <RuleBox card={card} />
+          {srsActive && <div className="mt-4 text-xs font-medium text-slate-500 flex items-center gap-1.5"><Icon name={['CalendarClock', 'Calendar']} size={14} />{srsPreview(card, status === 'correct')}</div>}
+          <div className="mt-5 flex flex-wrap gap-2 justify-end">
+            {status === 'wrong' && <Button variant="ghost" onClick={() => onDone(true)}>J’avais juste</Button>}
+            <Button autoFocus variant={status === 'correct' ? 'primary' : 'danger'} size="lg" onClick={() => onDone(status === 'correct')}>
+              Continuer <Icon name={['ArrowRight']} size={18} />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OralExercise({ card, settings, srsActive, onDone }) {
+  const [revealed, setRevealed] = useState(false);
+  const [typed, setTyped] = useState('');
+  const dict = useDictation(settings.accent);
+  useEffect(() => { if (dict.transcript) setTyped(dict.transcript); }, [dict.transcript]);
+  const reveal = () => { dict.stop(); setRevealed(true); if (settings.autoplay) speak(card.answer, settings); };
+  const score = typed.trim() ? similarity(typed, card) : null;
+
+  return (
+    <div>
+      <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Formule à voix haute</div>
+      <div className="text-xl sm:text-2xl font-semibold leading-snug text-slate-900 mb-5">{card.prompt}</div>
+      {card.hint && <div className="mb-4 text-sm text-slate-600 bg-slate-100 rounded-xl px-3 py-2 inline-flex items-center gap-2"><Icon name={['Info']} size={16} />{card.hint}</div>}
+
+      {!revealed && (
+        <div className="rounded-3xl border-2 border-dashed border-slate-200 p-5 bg-white">
+          <div className="flex items-center gap-4">
+            {dict.supported ? (
+              <button onClick={dict.listening ? dict.stop : dict.start}
+                className={`h-16 w-16 rounded-full flex items-center justify-center text-white shrink-0 transition ${dict.listening ? 'bg-rose-500 anim-rec' : 'bg-amber-500 hover:bg-amber-600 btn-3d'}`}>
+                <Icon name={dict.listening ? ['Square'] : ['Mic']} size={26} />
+              </button>
+            ) : (
+              <div className="h-16 w-16 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0"><Icon name={['Mic']} size={26} /></div>
+            )}
+            <div className="text-sm text-slate-600">
+              {dict.listening ? <span className="font-semibold text-rose-600">J’écoute… parle en anglais.</span>
+                : dict.supported ? 'Dis ta phrase à voix haute (le micro la transcrit), ou dis-la puis tape-la.'
+                : 'Dis ta phrase à voix haute. Tu peux aussi la taper ci-dessous pour la comparer.'}
+            </div>
+          </div>
+          <textarea value={typed} onChange={(e) => setTyped(e.target.value)} rows={2} placeholder="Ta formulation (facultatif)…"
+            className="mt-4 w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-amber-400 text-base resize-none" />
+          <div className="mt-4 flex justify-end">
+            <Button variant="dark" size="lg" onClick={reveal}><Icon name={['Eye']} size={18} /> Afficher la formulation idéale</Button>
+          </div>
+        </div>
+      )}
+
+      {revealed && (
+        <div className="rounded-3xl p-5 bg-amber-50 border border-amber-200 anim-fade">
+          <div className="text-xs font-bold uppercase tracking-wide text-amber-600 mb-2">Formulation idiomatique</div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="text-xl font-bold text-slate-900 leading-snug">{card.answer}</div>
+            <SpeakButton text={card.answer} settings={settings} />
+          </div>
+          {(card.alternatives || []).length > 0 && (
+            <div className="mt-3 space-y-1">
+              <div className="text-xs font-semibold text-slate-500">Variantes correctes :</div>
+              {card.alternatives.map((a, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm text-slate-700"><SpeakButton text={a} settings={settings} compact /> {a}</div>
+              ))}
+            </div>
+          )}
+          {score !== null && (
+            <div className="mt-4 p-3 rounded-2xl bg-white border border-amber-100">
+              <div className="text-xs text-slate-500 mb-1">Ta version : <span className="italic text-slate-700">« {typed} »</span></div>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                  <div className={`h-full rounded-full ${score >= 90 ? 'bg-emerald-500' : score >= 70 ? 'bg-yellow-400' : 'bg-rose-400'}`} style={{ width: score + '%' }} />
+                </div>
+                <span className="text-sm font-bold text-slate-700">{score} %</span>
+              </div>
+            </div>
+          )}
+          <RuleBox card={card} />
+          <div className="mt-5 text-sm font-semibold text-slate-700 text-center">Ta formulation était-elle correcte ?</div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <Button variant="danger" size="lg" onClick={() => onDone(false)}><Icon name={['RotateCcw']} size={18} /> À revoir</Button>
+            <Button autoFocus variant="primary" size="lg" onClick={() => onDone(true)}><Icon name={['Check']} size={18} /> Je l’avais !</Button>
+          </div>
+          {srsActive && <div className="mt-3 text-xs text-slate-500 text-center">Juste : {srsPreview(card, true)}</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+   SESSION
+   ========================================================= */
+function Session({ session, cards, settings, onAnswer, onExit, onMore }) {
+  const [queue, setQueue] = useState(() => session.ids.map((id) => ({ id, attempt: 1, key: id + '-1' })));
+  const [pos, setPos] = useState(0);
+  const [res, setRes] = useState({ correct: 0, wrong: 0, xp: 0 });
+  const [done, setDone] = useState(false);
+  const item = queue[pos];
+  const card = item && cards.find((c) => c.id === item.id);
+  const firstCount = session.ids.length;
+
+  const handleDone = (correct) => {
+    const first = item.attempt === 1;
+    const srsActive = session.updateSRS && first;
+    onAnswer(card.id, correct, { updateSRS: srsActive, firstAttempt: first });
+    setRes((r) => ({ correct: r.correct + (correct && first ? 1 : 0), wrong: r.wrong + (!correct && first ? 1 : 0), xp: r.xp + (correct ? (first ? 10 : 3) : 1) }));
+    let q = queue;
+    if (!correct && item.attempt < 3) {
+      q = [...queue, { id: item.id, attempt: item.attempt + 1, key: item.id + '-' + (item.attempt + 1) }];
+      setQueue(q);
+    }
+    if (pos + 1 >= q.length) setDone(true); else setPos(pos + 1);
+  };
+
+  if (done || !card) {
+    const total = res.correct + res.wrong;
+    const pct = total ? Math.round((res.correct / total) * 100) : 0;
+    return (
+      <div className="max-w-xl mx-auto px-4 py-10 text-center anim-pop">
+        <div className="mx-auto h-24 w-24 rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center text-white shadow-lg mb-6">
+          <Icon name={['Trophy']} size={48} />
+        </div>
+        <h2 className="text-3xl font-extrabold text-slate-900">Session terminée !</h2>
+        <p className="text-slate-500 mt-2">{pct >= 80 ? 'Superbe régularité. Tu te rapproches du C1.' : pct >= 50 ? 'Bon travail : les erreurs d’aujourd’hui sont les acquis de demain.' : 'Les cartes ratées reviendront demain. C’est exactement comme ça qu’on progresse.'}</p>
+        <div className="grid grid-cols-3 gap-3 mt-8">
+          <div className="rounded-2xl bg-white border border-slate-200 p-4"><div className="text-2xl font-extrabold text-emerald-600">{res.correct}</div><div className="text-xs text-slate-500 font-medium">du 1er coup</div></div>
+          <div className="rounded-2xl bg-white border border-slate-200 p-4"><div className="text-2xl font-extrabold text-rose-500">{res.wrong}</div><div className="text-xs text-slate-500 font-medium">à retravailler</div></div>
+          <div className="rounded-2xl bg-white border border-slate-200 p-4"><div className="text-2xl font-extrabold text-amber-500">+{res.xp}</div><div className="text-xs text-slate-500 font-medium">XP</div></div>
+        </div>
+        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+          <Button size="lg" variant="ghost" onClick={onExit}><Icon name={['House', 'Home']} size={18} /> Accueil</Button>
+          <Button size="lg" onClick={onMore}><Icon name={['Dumbbell']} size={18} /> Encore 10 cartes</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const progress = Math.min(100, (Math.min(pos, firstCount) / firstCount) * 100);
+  const srsActive = session.updateSRS && item.attempt === 1;
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="flex items-center gap-3 mb-6">
+        <button onClick={() => { if (pos === 0 || confirm('Quitter la session ? Tes réponses déjà données sont enregistrées.')) onExit(); }} className="p-2 rounded-xl hover:bg-slate-200 text-slate-500"><Icon name={['X']} size={22} /></button>
+        <div className="flex-1 h-4 rounded-full bg-slate-200 overflow-hidden">
+          <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500" style={{ width: progress + '%' }} />
+        </div>
+        <span className="text-sm font-bold text-slate-500 tabular-nums">{Math.min(pos + 1, queue.length)}/{queue.length}</span>
+      </div>
+
+      <div key={item.key} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 anim-fade">
+        <div className="flex items-center justify-between gap-2 mb-5 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <ModuleBadge module={card.module} />
+            {card.category && <span className="text-xs font-medium text-slate-500">{card.category}</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            {item.attempt > 1 && <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">2e chance</span>}
+            {!session.updateSRS && <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">Libre</span>}
+            <LevelDots card={card} />
+          </div>
+        </div>
+        {card.type === 'oral'
+          ? <OralExercise card={card} settings={settings} srsActive={srsActive} onDone={handleDone} />
+          : <InputExercise card={card} settings={settings} srsActive={srsActive} onDone={handleDone} />}
+      </div>
+      <p className="text-center text-xs text-slate-400 mt-4">Astuce : <kbd className="px-1.5 py-0.5 bg-white border rounded">Entrée</kbd> pour valider puis continuer.</p>
+    </div>
+  );
+}
+
+/* =========================================================
+   ACCUEIL
+   ========================================================= */
+function Home({ cards, stats, onStartDaily, onPractice, onImport }) {
+  const today = todayISO();
+  const due = cards.filter((c) => c.nextReviewDate <= today);
+  const streak = stats.lastStudyDate === today || stats.lastStudyDate === addDays(today, -1) ? stats.streak : 0;
+  const todayDone = (stats.history[today] && stats.history[today].reviewed) || 0;
+  const goal = stats.settings.dailyGoal;
+  const nextDue = cards.filter((c) => c.nextReviewDate > today).map((c) => c.nextReviewDate).sort()[0];
+  const boxes = [1, 2, 3, 4, 5].map((l) => cards.filter((c) => c.reviews > 0 && c.level === l).length);
+  const newCount = cards.filter((c) => c.reviews === 0).length;
+  const sessionSize = Math.min(due.length, stats.settings.sessionLimit);
+  const days = Array.from({ length: 14 }, (_, i) => addDays(today, i - 13));
+  const maxDay = Math.max(1, ...days.map((d) => (stats.history[d] ? stats.history[d].reviewed : 0)));
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8 space-y-6">
+      {/* HERO */}
+      <div className="grid md:grid-cols-3 gap-4">
+        <div className="md:col-span-2 relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-emerald-500 to-teal-500 text-white p-6 sm:p-8 shadow-lg">
+          <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10" />
+          <div className="absolute right-16 -bottom-16 h-40 w-40 rounded-full bg-white/10" />
+          <div className="relative">
+            <div className="text-emerald-100 text-sm font-semibold uppercase tracking-wider">À réviser aujourd’hui</div>
+            <div className="flex items-end gap-3 mt-1">
+              <span className="text-6xl font-extrabold leading-none tabular-nums">{due.length}</span>
+              <span className="text-emerald-100 font-medium pb-2">carte{due.length > 1 ? 's' : ''} due{due.length > 1 ? 's' : ''}</span>
+            </div>
+            {due.length > 0 ? (
+              <>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                  {Object.keys(MODULES).map((m) => {
+                    const n = due.filter((c) => c.module === m).length;
+                    return n ? <span key={m} className="bg-white/20 rounded-full px-2.5 py-1 font-semibold">{MODULES[m].short} · {n}</span> : null;
+                  })}
+                </div>
+                <button onClick={onStartDaily} className="mt-6 inline-flex items-center gap-2 bg-white text-emerald-700 font-extrabold px-6 py-3.5 rounded-2xl btn-3d hover:bg-emerald-50">
+                  <Icon name={['Play']} size={20} /> Lancer la session du jour {due.length > sessionSize && `(${sessionSize})`}
+                </button>
+              </>
+            ) : (
+              <div className="mt-4">
+                <div className="text-lg font-bold">Tout est à jour 🎉</div>
+                <div className="text-emerald-100 text-sm">{nextDue ? `Prochaines révisions : ${fmtDate(nextDue)} (${relativeDue(nextDue)}).` : 'Ajoute des cartes pour commencer.'}</div>
+                <button onClick={() => onPractice('all')} className="mt-5 inline-flex items-center gap-2 bg-white text-emerald-700 font-extrabold px-6 py-3.5 rounded-2xl btn-3d hover:bg-emerald-50">
+                  <Icon name={['Dumbbell']} size={20} /> Entraînement libre
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-1 gap-4">
+          <div className="rounded-3xl bg-white border border-slate-200 p-5 flex items-center gap-4">
+            <div className={`h-14 w-14 rounded-2xl flex items-center justify-center ${streak ? 'bg-orange-100 text-orange-500' : 'bg-slate-100 text-slate-400'}`}><Icon name={['Flame']} size={30} /></div>
+            <div><div className="text-3xl font-extrabold tabular-nums">{streak}</div><div className="text-xs text-slate-500 font-medium">jour{streak > 1 ? 's' : ''} de série · record {stats.bestStreak}</div></div>
+          </div>
+          <div className="rounded-3xl bg-white border border-slate-200 p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold text-slate-700 flex items-center gap-1.5"><Icon name={['Target']} size={16} className="text-indigo-500" /> Objectif du jour</span>
+              <span className="text-sm font-bold tabular-nums text-slate-500">{todayDone}/{goal}</span>
+            </div>
+            <div className="h-3 rounded-full bg-slate-100 overflow-hidden"><div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: Math.min(100, (todayDone / goal) * 100) + '%' }} /></div>
+            <div className="mt-2 text-xs text-slate-500 flex items-center gap-1"><Icon name={['Zap']} size={13} className="text-amber-500" /> {stats.xp} XP au total</div>
+          </div>
+        </div>
+      </div>
+
+      {/* MODULES */}
+      <div>
+        <h3 className="text-lg font-extrabold text-slate-900 mb-3">Modules</h3>
+        <div className="grid md:grid-cols-3 gap-4">
+          {Object.entries(MODULES).map(([key, m]) => {
+            const list = cards.filter((c) => c.module === key);
+            const dueN = list.filter((c) => c.nextReviewDate <= today).length;
+            const mastery = list.length ? Math.round((list.reduce((s, c) => s + (c.reviews ? c.level - 1 : 0), 0) / (list.length * 4)) * 100) : 0;
+            return (
+              <div key={key} className="rounded-3xl bg-white border border-slate-200 p-5 flex flex-col hover:shadow-md transition">
+                <div className="flex items-center justify-between">
+                  <div className={`h-11 w-11 rounded-2xl bg-gradient-to-br ${THEME[key].grad} text-white flex items-center justify-center`}><Icon name={m.icon} size={22} /></div>
+                  <span className="text-xs font-bold text-slate-400">{m.level}</span>
+                </div>
+                <div className="mt-3 font-bold text-slate-900">{m.label}</div>
+                <p className="text-sm text-slate-500 mt-1 flex-1">{m.desc}</p>
+                <div className="mt-4">
+                  <div className="flex justify-between text-xs font-semibold text-slate-500 mb-1"><span>Maîtrise {mastery} %</span><span>{list.length} cartes · {dueN} dues</span></div>
+                  <div className="h-2 rounded-full bg-slate-100 overflow-hidden"><div className={`h-full rounded-full ${THEME[key].bar}`} style={{ width: mastery + '%' }} /></div>
+                </div>
+                <Button variant="soft" className="mt-4" onClick={() => onPractice(key)}><Icon name={['Dumbbell']} size={16} /> S’entraîner</Button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* LEITNER + ACTIVITÉ */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="rounded-3xl bg-white border border-slate-200 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-extrabold text-slate-900">Boîtes de Leitner</h3>
+            <span className="text-xs font-semibold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full">{newCount} nouvelles</span>
+          </div>
+          <div className="grid grid-cols-5 gap-2 items-end h-32">
+            {boxes.map((n, i) => {
+              const max = Math.max(1, ...boxes);
+              return (
+                <div key={i} className="flex flex-col items-center justify-end h-full">
+                  <span className="text-xs font-bold text-slate-600 mb-1 tabular-nums">{n}</span>
+                  <div className={`w-full rounded-t-xl ${LEVEL_COLORS[i + 1]}`} style={{ height: Math.max(6, (n / max) * 90) + '%' }} />
+                </div>
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-5 gap-2 mt-2 text-center">
+            {[1, 2, 3, 4, 5].map((l) => <div key={l} className="text-[11px] text-slate-500 font-semibold">Niv {l}<br /><span className="font-normal text-slate-400">{INTERVALS[l]} j</span></div>)}
+          </div>
+        </div>
+        <div className="rounded-3xl bg-white border border-slate-200 p-5">
+          <h3 className="font-extrabold text-slate-900 mb-4">Activité (14 jours)</h3>
+          <div className="flex items-end gap-1.5 h-32">
+            {days.map((d) => {
+              const h = stats.history[d]; const n = h ? h.reviewed : 0;
+              return (
+                <div key={d} className="flex-1 flex flex-col justify-end h-full group relative" title={`${fmtDate(d)} : ${n} révisions${h ? `, ${h.correct} justes` : ''}`}>
+                  <div className={`w-full rounded-md ${n ? (d === today ? 'bg-emerald-500' : 'bg-emerald-300') : 'bg-slate-100'}`} style={{ height: n ? Math.max(8, (n / maxDay) * 100) + '%' : '6%' }} />
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-between text-[11px] text-slate-400 mt-2"><span>{fmtDate(days[0])}</span><span>aujourd’hui</span></div>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border-2 border-dashed border-slate-200 p-5 flex flex-col sm:flex-row items-center gap-4 justify-between">
+        <div className="flex items-center gap-3">
+          <Icon name={['Sparkles']} size={24} className="text-violet-500" />
+          <div><div className="font-bold text-slate-800">Enrichis ton deck</div><div className="text-sm text-slate-500">Colle 30 ou 50 exercices générés par une IA au format JSON.</div></div>
+        </div>
+        <Button variant="dark" onClick={onImport}><Icon name={['Upload']} size={16} /> Importer du JSON</Button>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   ENTRAÎNEMENT LIBRE (MODALE)
+   ========================================================= */
+function PracticeModal({ initialModule, cards, onClose, onStart }) {
+  const [module, setModule] = useState(initialModule || 'all');
+  const [count, setCount] = useState(10);
+  const [order, setOrder] = useState('weak');
+  const [updateSRS, setUpdateSRS] = useState(false);
+  const pool = cards.filter((c) => module === 'all' || c.module === module);
+  const opt = (active) => `px-3 py-2 rounded-xl text-sm font-semibold border-2 transition ${active ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`;
+  return (
+    <Modal title="Entraînement libre" onClose={onClose}>
+      <div className="space-y-5">
+        <div>
+          <div className="text-sm font-bold text-slate-700 mb-2">Module</div>
+          <div className="flex flex-wrap gap-2">
+            <button className={opt(module === 'all')} onClick={() => setModule('all')}>Tous</button>
+            {Object.entries(MODULES).map(([k, m]) => <button key={k} className={opt(module === k)} onClick={() => setModule(k)}>{m.short}</button>)}
+          </div>
+        </div>
+        <div>
+          <div className="text-sm font-bold text-slate-700 mb-2">Nombre de cartes</div>
+          <div className="flex flex-wrap gap-2">
+            {[10, 20, 30, 0].map((n) => <button key={n} className={opt(count === n)} onClick={() => setCount(n)}>{n || `Toutes (${pool.length})`}</button>)}
+          </div>
+        </div>
+        <div>
+          <div className="text-sm font-bold text-slate-700 mb-2">Ordre</div>
+          <div className="flex flex-wrap gap-2">
+            <button className={opt(order === 'weak')} onClick={() => setOrder('weak')}>Points faibles d’abord</button>
+            <button className={opt(order === 'random')} onClick={() => setOrder('random')}>Aléatoire</button>
+            <button className={opt(order === 'new')} onClick={() => setOrder('new')}>Nouvelles d’abord</button>
+          </div>
+        </div>
+        <label className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 cursor-pointer">
+          <input type="checkbox" checked={updateSRS} onChange={(e) => setUpdateSRS(e.target.checked)} className="mt-1 h-4 w-4 accent-emerald-500" />
+          <span className="text-sm text-slate-600"><span className="font-semibold text-slate-800">Mettre à jour la répétition espacée.</span> Par défaut, l’entraînement libre ne modifie pas tes niveaux ni tes dates de révision.</span>
+        </label>
+        <Button size="lg" className="w-full" disabled={!pool.length} onClick={() => {
+          let list = [...pool];
+          if (order === 'random') list = shuffle(list);
+          else if (order === 'weak') list = shuffle(list).sort((a, b) => (a.reviews ? a.level : 0.5) - (b.reviews ? b.level : 0.5) || b.lapses - a.lapses);
+          else list = shuffle(list).sort((a, b) => a.reviews - b.reviews);
+          if (count) list = list.slice(0, count);
+          if (order !== 'random') list = shuffle(list.slice(0, Math.max(list.length, 1)));
+          onStart(list.map((c) => c.id), updateSRS);
+        }}>
+          <Icon name={['Play']} size={18} /> C’est parti ({count ? Math.min(count, pool.length) : pool.length})
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+/* =========================================================
+   BIBLIOTHÈQUE
+   ========================================================= */
+function Library({ cards, settings, onDelete, onReset }) {
+  const [q, setQ] = useState('');
+  const [mod, setMod] = useState('all');
+  const [lvl, setLvl] = useState('all');
+  const [open, setOpen] = useState(null);
+  const today = todayISO();
+  const list = useMemo(() => cards
+    .filter((c) => mod === 'all' || c.module === mod)
+    .filter((c) => lvl === 'all' || (lvl === 'due' ? c.nextReviewDate <= today : lvl === 'new' ? c.reviews === 0 : c.reviews > 0 && c.level === Number(lvl)))
+    .filter((c) => !q || [c.prompt, c.answer, c.category, ...(c.alternatives || [])].join(' ').toLowerCase().includes(q.toLowerCase()))
+    .sort((a, b) => a.nextReviewDate.localeCompare(b.nextReviewDate)), [cards, mod, lvl, q, today]);
+  const chip = (a) => `px-3 py-1.5 rounded-full text-sm font-semibold transition ${a ? 'bg-slate-900 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`;
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-5">
+        <div><h2 className="text-2xl font-extrabold text-slate-900">Bibliothèque</h2><p className="text-sm text-slate-500">{list.length} carte{list.length > 1 ? 's' : ''} sur {cards.length}</p></div>
+        <div className="relative sm:w-72">
+          <Icon name={['Search']} size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher…" className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-indigo-400" />
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2 mb-3">
+        <button className={chip(mod === 'all')} onClick={() => setMod('all')}>Tous</button>
+        {Object.entries(MODULES).map(([k, m]) => <button key={k} className={chip(mod === k)} onClick={() => setMod(k)}>{m.short}</button>)}
+        <select value={lvl} onChange={(e) => setLvl(e.target.value)} className="ml-auto px-3 py-1.5 rounded-full text-sm font-semibold bg-white border border-slate-200">
+          <option value="all">Tous niveaux</option><option value="due">Dues aujourd’hui</option><option value="new">Nouvelles</option>
+          {[1, 2, 3, 4, 5].map((l) => <option key={l} value={l}>Niveau {l}</option>)}
+        </select>
+      </div>
+      <div className="space-y-2">
+        {list.map((c) => (
+          <div key={c.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <button onClick={() => setOpen(open === c.id ? null : c.id)} className="w-full text-left p-4 flex items-start gap-3 hover:bg-slate-50">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1"><ModuleBadge module={c.module} />{c.category && <span className="text-xs text-slate-400">{c.category}</span>}</div>
+                <div className="text-sm font-medium text-slate-800 truncate">{c.prompt}</div>
+                <div className="text-sm text-emerald-700 font-semibold truncate">{c.answer}</div>
+              </div>
+              <div className="text-right shrink-0 space-y-1">
+                <LevelDots card={c} />
+                <div className={`text-xs font-semibold ${c.nextReviewDate <= today ? 'text-rose-500' : 'text-slate-400'}`}>{relativeDue(c.nextReviewDate)}</div>
+              </div>
+            </button>
+            {open === c.id && (
+              <div className="px-4 pb-4 border-t border-slate-100 pt-3 anim-fade">
+                {(c.alternatives || []).length > 0 && <div className="text-xs text-slate-500 mb-2"><span className="font-semibold">Aussi accepté :</span> {c.alternatives.join(' · ')}</div>}
+                {c.hint && <div className="text-xs text-slate-500 mb-2"><span className="font-semibold">Indice :</span> {c.hint}</div>}
+                <RuleBox card={c} />
+                <div className="mt-3 text-xs text-slate-400">{c.reviews} révision(s) · {c.lapses} erreur(s) · ajoutée le {fmtDate(c.createdAt)}</div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <SpeakButton text={audioTextFor(c)} settings={settings} />
+                  <Button size="sm" variant="ghost" onClick={() => onReset(c.id)}><Icon name={['RotateCcw']} size={14} /> Remettre au niveau 1</Button>
+                  <Button size="sm" variant="ghost" className="!text-rose-600" onClick={() => { if (confirm('Supprimer cette carte ?')) onDelete(c.id); }}><Icon name={['Trash2']} size={14} /> Supprimer</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+        {!list.length && <div className="text-center py-16 text-slate-400">Aucune carte ne correspond.</div>}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   DONNÉES : AJOUT, IMPORT, EXPORT, RÉGLAGES
+   ========================================================= */
+const JSON_EXAMPLE = `[
+  {
+    "module": "pieges",
+    "category": "Since / For",
+    "prompt": "She has worked here ___ 2019.",
+    "answer": "since",
+    "hint": "depuis + point de départ",
+    "explanation": "SINCE + point de départ ; FOR + durée.",
+    "tip": "SINCE = Starting point."
+  },
+  {
+    "module": "collocations",
+    "category": "Verbe + nom",
+    "prompt": "tenir une promesse",
+    "answer": "keep a promise",
+    "alternatives": ["keep one's promise"],
+    "explanation": "On KEEP une promesse, on BREAK une promesse.",
+    "example": "He always keeps his promises."
+  },
+  {
+    "module": "c1",
+    "category": "Inversion négative",
+    "prompt": "Commence par « Rarely » : « I have rarely heard such a convincing argument. »",
+    "answer": "Rarely have I heard such a convincing argument.",
+    "explanation": "Adverbe négatif en tête → inversion auxiliaire + sujet."
+  }
+]`;
+
+const AI_PROMPT = `Génère 50 exercices d'anglais pour un francophone qui passe du niveau B2 au C1, sous forme d'un tableau JSON valide (et rien d'autre).
+Chaque objet contient :
+- "module" : "pieges" (erreurs typiques des francophones : temps, prépositions, faux amis, modaux… ; phrase anglaise avec ___ à compléter, ou phrase française à traduire), "collocations" (expression française → collocation anglaise naturelle) ou "c1" (consigne de reformulation orale en français + phrase source anglaise ; structures C1 : inversions, clivées, conditionnels mixtes, nominalisation, hedging…)
+- "category" : thème court
+- "prompt" : la question
+- "answer" : la réponse de référence
+- "alternatives" : tableau d'autres réponses correctes (facultatif)
+- "hint" : indice court en français (facultatif)
+- "explanation" : la règle en français, concise
+- "tip" : un moyen mnémotechnique (facultatif)
+- "example" : une phrase d'exemple en anglais (facultatif, utile pour les collocations)
+Répartis : 20 pieges, 15 collocations, 15 c1. Varie les thèmes et évite les doublons avec : since/for, through/though, depend on, explain to me, should have.`;
+
+function AddCardForm({ onAdd }) {
+  const empty = { module: 'pieges', category: '', prompt: '', answer: '', alternatives: '', hint: '', explanation: '', tip: '', example: '' };
+  const [f, setF] = useState(empty);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const input = 'w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-400 bg-white text-sm';
+  const placeholders = {
+    pieges: ['I have known her ___ ten years.', 'for'],
+    collocations: ['faire une erreur', 'make a mistake'],
+    c1: ['Commence par « Seldom » : « We seldom see such talent. »', 'Seldom do we see such talent.'],
+  }[f.module];
+  return (
+    <form onSubmit={(e) => {
+      e.preventDefault();
+      const card = makeCard({ ...f, alternatives: f.alternatives.split('|') });
+      if (!card) return;
+      onAdd(card); setF({ ...empty, module: f.module, category: f.category });
+    }} className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <select value={f.module} onChange={set('module')} className={input}>
+          {Object.entries(MODULES).map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
+        </select>
+        <input value={f.category} onChange={set('category')} placeholder="Catégorie (ex : Since / For)" className={input} />
+      </div>
+      <input value={f.prompt} onChange={set('prompt')} required placeholder={`Question — ex : ${placeholders[0]}  (___ pour un trou)`} className={input} />
+      <input value={f.answer} onChange={set('answer')} required placeholder={`Réponse — ex : ${placeholders[1]}`} className={input} />
+      <input value={f.alternatives} onChange={set('alternatives')} placeholder="Autres réponses acceptées, séparées par |" className={input} />
+      <div className="grid sm:grid-cols-2 gap-3">
+        <input value={f.hint} onChange={set('hint')} placeholder="Indice (facultatif)" className={input} />
+        <input value={f.example} onChange={set('example')} placeholder="Exemple en anglais (facultatif)" className={input} />
+      </div>
+      <textarea value={f.explanation} onChange={set('explanation')} rows={2} placeholder="Explication de la règle" className={input + ' resize-none'} />
+      <input value={f.tip} onChange={set('tip')} placeholder="Moyen mnémotechnique (facultatif)" className={input} />
+      <Button type="submit" className="w-full"><Icon name={['Plus']} size={16} /> Ajouter la carte</Button>
+    </form>
+  );
+}
+
+function ImportModal({ cards, onClose, onMerge, onRestore, notify }) {
+  const [text, setText] = useState('');
+  const [error, setError] = useState('');
+  const fileRef = useRef(null);
+  let parsed = null;
+  try { parsed = text.trim() ? JSON.parse(text) : null; } catch (e) { parsed = undefined; }
+  const isBackup = parsed && !Array.isArray(parsed) && Array.isArray(parsed.cards);
+  const rawList = Array.isArray(parsed) ? parsed : isBackup ? parsed.cards : parsed && Array.isArray(parsed.exercises) ? parsed.exercises : null;
+
+  const merge = () => {
+    setError('');
+    if (parsed === undefined) return setError('JSON invalide : vérifie les virgules, guillemets et crochets.');
+    if (!rawList) return setError('Format attendu : un tableau [ {...}, {...} ] ou un objet { "cards": [...] }.');
+    const existingIds = new Set(cards.map((c) => c.id));
+    const existingKeys = new Set(cards.map((c) => normalize(c.prompt) + '|' + normalize(c.answer)));
+    let added = [], dup = 0, invalid = 0;
+    rawList.forEach((r) => {
+      const c = makeCard(r);
+      if (!c) { invalid++; return; }
+      const k = normalize(c.prompt) + '|' + normalize(c.answer);
+      if (existingIds.has(c.id) || existingKeys.has(k)) { dup++; return; }
+      existingIds.add(c.id); existingKeys.add(k); added.push(c);
+    });
+    onMerge(added);
+    notify(`${added.length} carte(s) ajoutée(s)${dup ? ` · ${dup} doublon(s) ignoré(s)` : ''}${invalid ? ` · ${invalid} invalide(s)` : ''}`, added.length ? 'success' : 'info');
+    if (added.length) onClose();
+  };
+
+  return (
+    <Modal title="Importer des exercices (JSON)" onClose={onClose} wide>
+      <div className="space-y-4">
+        <p className="text-sm text-slate-600">Colle un tableau JSON d’exercices, ou charge un fichier. Les champs obligatoires sont <code className="bg-slate-100 px-1 rounded">module</code>, <code className="bg-slate-100 px-1 rounded">prompt</code> et <code className="bg-slate-100 px-1 rounded">answer</code>. Les nouvelles cartes sont dues dès aujourd’hui.</p>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="soft" onClick={() => setText(JSON_EXAMPLE)}><Icon name={['FileJson', 'FileCode']} size={14} /> Insérer un exemple</Button>
+          <Button size="sm" variant="soft" onClick={() => { navigator.clipboard && navigator.clipboard.writeText(AI_PROMPT).then(() => notify('Prompt copié : colle-le dans ton IA préférée.', 'info')); }}><Icon name={['Sparkles']} size={14} /> Copier un prompt pour IA</Button>
+          <Button size="sm" variant="soft" onClick={() => fileRef.current && fileRef.current.click()}><Icon name={['FolderOpen']} size={14} /> Charger un fichier</Button>
+          <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={(e) => {
+            const file = e.target.files && e.target.files[0]; if (!file) return;
+            const rd = new FileReader(); rd.onload = () => setText(String(rd.result)); rd.readAsText(file); e.target.value = '';
+          }} />
+        </div>
+        <textarea value={text} onChange={(e) => { setText(e.target.value); setError(''); }} rows={12} spellCheck="false"
+          placeholder='[ { "module": "pieges", "prompt": "...", "answer": "..." } ]'
+          className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-indigo-400 font-mono text-xs leading-relaxed bg-slate-50" />
+        <div className="text-xs font-medium h-4">
+          {parsed === undefined && text.trim() && <span className="text-rose-600">JSON invalide pour l’instant…</span>}
+          {rawList && <span className="text-emerald-600">{rawList.length} élément(s) détecté(s){isBackup ? ' · sauvegarde complète reconnue' : ''}</span>}
+        </div>
+        {error && <div className="text-sm text-rose-600 bg-rose-50 rounded-xl px-3 py-2">{error}</div>}
+        <div className="flex flex-col sm:flex-row gap-2 justify-end">
+          {isBackup && <Button variant="ghost" onClick={() => {
+            if (!confirm('Restaurer cette sauvegarde ? Toutes tes cartes et ta progression actuelles seront remplacées.')) return;
+            onRestore(parsed); onClose();
+          }}><Icon name={['History']} size={16} /> Restaurer (remplace tout)</Button>}
+          <Button onClick={merge} disabled={!text.trim()}><Icon name={['Upload']} size={16} /> Ajouter au deck</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function DataView({ cards, stats, setStats, onAdd, onExport, onOpenImport, onResetProgress, onWipe, notify }) {
+  const s = stats.settings;
+  const setS = (k, v) => setStats((st) => ({ ...st, settings: { ...st.settings, [k]: v } }));
+  const box = 'rounded-3xl bg-white border border-slate-200 p-5 sm:p-6';
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8 grid lg:grid-cols-2 gap-5">
+      <div className={box}>
+        <h3 className="font-extrabold text-slate-900 mb-1 flex items-center gap-2"><Icon name={['SquarePlus', 'PlusSquare']} size={20} className="text-emerald-500" /> Ajout manuel</h3>
+        <p className="text-sm text-slate-500 mb-4">Une erreur repérée en réunion ou une belle tournure lue ? Crée la carte tout de suite.</p>
+        <AddCardForm onAdd={(c) => { onAdd(c); notify('Carte ajoutée — elle est due aujourd’hui.'); }} />
+      </div>
+
+      <div className="space-y-5">
+        <div className={box}>
+          <h3 className="font-extrabold text-slate-900 mb-1 flex items-center gap-2"><Icon name={['Database']} size={20} className="text-indigo-500" /> Import & sauvegarde</h3>
+          <p className="text-sm text-slate-500 mb-4">Tout est stocké dans ce navigateur (LocalStorage). Exporte régulièrement une copie de secours : le fichier permet aussi de transférer ta progression sur un autre appareil.</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Button variant="indigo" onClick={onOpenImport}><Icon name={['Upload']} size={16} /> Importer du JSON</Button>
+            <Button variant="dark" onClick={onExport}><Icon name={['Download']} size={16} /> Exporter ma progression</Button>
+          </div>
+          <div className="mt-3 text-xs text-slate-400">{cards.length} cartes · {stats.xp} XP · dernière étude : {stats.lastStudyDate ? fmtDate(stats.lastStudyDate) : '—'}</div>
+        </div>
+
+        <div className={box}>
+          <h3 className="font-extrabold text-slate-900 mb-4 flex items-center gap-2"><Icon name={['Settings']} size={20} className="text-slate-500" /> Réglages</h3>
+          <div className="space-y-4 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-semibold text-slate-700">Accent de la voix</span>
+              <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                {[['en-GB', '🇬🇧 UK'], ['en-US', '🇺🇸 US']].map(([v, l]) => (
+                  <button key={v} onClick={() => setS('accent', v)} className={`px-3 py-1.5 rounded-lg font-semibold ${s.accent === v ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}>{l}</button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-semibold text-slate-700">Vitesse ({s.rate.toFixed(2)}×)</span>
+              <div className="flex items-center gap-2">
+                <input type="range" min="0.6" max="1.3" step="0.05" value={s.rate} onChange={(e) => setS('rate', Number(e.target.value))} className="accent-emerald-500" />
+                <SpeakButton text="Never had I seen such a thorough analysis." settings={s} compact />
+              </div>
+            </div>
+            <label className="flex items-center justify-between gap-3 cursor-pointer">
+              <span className="font-semibold text-slate-700">Lecture audio automatique après réponse</span>
+              <input type="checkbox" checked={s.autoplay} onChange={(e) => setS('autoplay', e.target.checked)} className="h-4 w-4 accent-emerald-500" />
+            </label>
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-semibold text-slate-700">Cartes max. par session du jour</span>
+              <input type="number" min="5" max="500" value={s.sessionLimit} onChange={(e) => setS('sessionLimit', clamp(Number(e.target.value) || 40, 5, 500))} className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 text-right" />
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-semibold text-slate-700">Objectif quotidien (révisions)</span>
+              <input type="number" min="5" max="300" value={s.dailyGoal} onChange={(e) => setS('dailyGoal', clamp(Number(e.target.value) || 20, 5, 300))} className="w-20 px-2 py-1.5 rounded-lg border border-slate-200 text-right" />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-rose-200 bg-rose-50/50 p-5 sm:p-6">
+          <h3 className="font-extrabold text-rose-700 mb-3 flex items-center gap-2"><Icon name={['TriangleAlert', 'AlertTriangle']} size={20} /> Zone sensible</h3>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="ghost" onClick={() => { if (confirm('Remettre toutes les cartes au niveau 1 (dues aujourd’hui) ? Tes cartes sont conservées.')) onResetProgress(); }}>Réinitialiser la progression</Button>
+            <Button size="sm" variant="danger" onClick={() => { if (confirm('Tout effacer et revenir aux cartes de départ ? Pense à exporter avant.')) onWipe(); }}>Tout effacer</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   APP
+   ========================================================= */
+function App() {
+  const [cards, setCards] = useState(loadCards);
+  const [stats, setStats] = useState(loadStats);
+  const [view, setView] = useState('home');
+  const [session, setSession] = useState(null);
+  const [practice, setPractice] = useState(null);
+  const [showImport, setShowImport] = useState(false);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+
+  useEffect(() => { try { localStorage.setItem(STORAGE_CARDS, JSON.stringify(cards)); } catch (e) {} }, [cards]);
+  useEffect(() => { try { localStorage.setItem(STORAGE_STATS, JSON.stringify(stats)); } catch (e) {} }, [stats]);
+  useEffect(() => { if ('speechSynthesis' in window) { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices(); } }, []);
+
+  const notify = (msg, type = 'success') => {
+    setToast({ msg, type }); clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 3200);
+  };
+
+  const today = todayISO();
+  const dueCount = cards.filter((c) => c.nextReviewDate <= today).length;
+  const streak = stats.lastStudyDate === today || stats.lastStudyDate === addDays(today, -1) ? stats.streak : 0;
+
+  const startSession = (ids, updateSRS, title) => {
+    if (!ids.length) return notify('Aucune carte disponible.', 'info');
+    setSession({ ids, updateSRS, title, nonce: Date.now() }); setView('session'); setPractice(null); window.scrollTo(0, 0);
+  };
+  const startDaily = () => {
+    const due = shuffle(cards.filter((c) => c.nextReviewDate <= todayISO()))
+      .sort((a, b) => a.nextReviewDate.localeCompare(b.nextReviewDate))
+      .slice(0, stats.settings.sessionLimit);
+    startSession(shuffle(due).map((c) => c.id), true, 'Session du jour');
+  };
+  const onAnswer = (id, correct, { updateSRS, firstAttempt }) => {
+    if (updateSRS) setCards((prev) => prev.map((c) => (c.id === id ? applySRS(c, correct) : c)));
+    setStats((prev) => recordStats(prev, correct, firstAttempt));
+  };
+
+  const exportData = () => {
+    const data = { app: 'road-to-c1', version: 1, exportedAt: new Date().toISOString(), cards, stats };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = `road-to-c1-sauvegarde-${todayISO()}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    notify('Sauvegarde exportée.');
+  };
+
+  const navBtn = (v, label, icon) => (
+    <button onClick={() => setView(v)} className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition ${view === v ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
+      <Icon name={icon} size={16} /><span className="hidden sm:inline">{label}</span>
+    </button>
+  );
+
+  return (
+    <div className="min-h-screen">
+      {view !== 'session' && (
+        <header className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-slate-200">
+          <div className="max-w-5xl mx-auto px-4 h-16 flex items-center gap-3">
+            <button onClick={() => setView('home')} className="flex items-center gap-2 mr-auto">
+              <span className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 text-white flex items-center justify-center font-black shadow-sm">C1</span>
+              <span className="font-extrabold text-slate-900 hidden xs:inline sm:inline">Road to C1</span>
+            </button>
+            <nav className="flex items-center gap-1">
+              {navBtn('home', 'Accueil', ['House', 'Home'])}
+              {navBtn('library', 'Bibliothèque', ['BookOpen'])}
+              {navBtn('data', 'Données', ['Database'])}
+            </nav>
+            <div className="hidden md:flex items-center gap-3 pl-3 ml-1 border-l border-slate-200">
+              <span className="flex items-center gap-1 text-sm font-bold text-orange-500"><Icon name={['Flame']} size={18} />{streak}</span>
+              <span className="flex items-center gap-1 text-sm font-bold text-rose-500"><Icon name={['CalendarCheck', 'Calendar']} size={18} />{dueCount}</span>
+            </div>
+          </div>
+        </header>
+      )}
+
+      <main>
+        {view === 'home' && <Home cards={cards} stats={stats} onStartDaily={startDaily} onPractice={(m) => setPractice(m)} onImport={() => setShowImport(true)} />}
+        {view === 'library' && <Library cards={cards} settings={stats.settings}
+          onDelete={(id) => { setCards((p) => p.filter((c) => c.id !== id)); notify('Carte supprimée.', 'info'); }}
+          onReset={(id) => { setCards((p) => p.map((c) => (c.id === id ? { ...c, level: 1, nextReviewDate: todayISO() } : c))); notify('Carte remise au niveau 1.', 'info'); }} />}
+        {view === 'data' && <DataView cards={cards} stats={stats} setStats={setStats} notify={notify}
+          onAdd={(c) => setCards((p) => [c, ...p])} onExport={exportData} onOpenImport={() => setShowImport(true)}
+          onResetProgress={() => { setCards((p) => p.map((c) => ({ ...c, level: 1, nextReviewDate: todayISO(), reviews: 0, lapses: 0, correctCount: 0, lastReviewed: null }))); notify('Progression réinitialisée.', 'info'); }}
+          onWipe={() => { setCards(SEED.map(makeCard)); setStats(DEFAULT_STATS); notify('Application réinitialisée.', 'info'); }} />}
+        {view === 'session' && session && (
+          <Session key={session.nonce} session={session} cards={cards} settings={stats.settings} onAnswer={onAnswer}
+            onExit={() => { if ('speechSynthesis' in window) speechSynthesis.cancel(); setView('home'); setSession(null); }}
+            onMore={() => {
+              const list = shuffle(cards).sort((a, b) => (a.reviews ? a.level : 0.5) - (b.reviews ? b.level : 0.5)).slice(0, 10);
+              startSession(shuffle(list).map((c) => c.id), false, 'Entraînement libre');
+            }} />
+        )}
+      </main>
+
+      {view !== 'session' && (
+        <footer className="max-w-5xl mx-auto px-4 pb-10 pt-2 text-center text-xs text-slate-400">
+          Répétition espacée : niveau 1 → 1 j · 2 → 3 j · 3 → 7 j · 4 → 16 j · 5 → 30 j. Une erreur renvoie au niveau 1.
+        </footer>
+      )}
+
+      {practice && <PracticeModal initialModule={practice} cards={cards} onClose={() => setPractice(null)} onStart={(ids, srs) => startSession(ids, srs, 'Entraînement libre')} />}
+      {showImport && <ImportModal cards={cards} notify={notify} onClose={() => setShowImport(false)}
+        onMerge={(added) => setCards((p) => [...p, ...added])}
+        onRestore={(data) => {
+          const restored = data.cards.map(makeCard).filter(Boolean);
+          setCards(restored);
+          if (data.stats) setStats({ ...DEFAULT_STATS, ...data.stats, settings: { ...DEFAULT_STATS.settings, ...(data.stats.settings || {}) }, history: data.stats.history || {} });
+          notify(`Sauvegarde restaurée : ${restored.length} cartes.`);
+        }} />}
+      <Toast toast={toast} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
